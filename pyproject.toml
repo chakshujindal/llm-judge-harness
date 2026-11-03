@@ -1,0 +1,58 @@
+[project]
+name = "llm-judge-harness"
+version = "0.1.0"
+description = "Run a test suite of prompts across LLMs, score answers with rules and an LLM judge, and get a pass-rate report."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Chakshu Jindal" }]
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic==2.3.0",
+    "openai==3.42.1",
+    "httpx2==2.16.0",
+    "pydantic==2.14.2",
+    "typer==0.27.3",
+    "pyyaml==6.0.3",
+    "jsonschema==4.26.0",
+    "jinja2==3.1.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.2.0",
+    "pytest-cov==7.1.0",
+    "pytest-asyncio==1.4.1.post1",
+    "ruff==0.17.3",
+]
+
+[project.scripts]
+ljh = "ljh.cli:app"
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ljh"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "ASYNC", "PT"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["ljh"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 95

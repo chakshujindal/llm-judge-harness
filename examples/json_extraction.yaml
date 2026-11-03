@@ -1,0 +1,69 @@
+# Pull a sender's contact details out of a short message as JSON.
+# A JSON Schema checks the shape; an LLM judge checks the content against the reference.
+name: json-extraction
+description: Contact-detail extraction into JSON, checked by a schema and an LLM judge rubric.
+system_prompt: |
+  Extract the sender's contact details from the message.
+  Reply with only a JSON object with the keys "name", "email", "phone" and "company".
+  Use null for anything the message does not state. Do not guess.
+
+default_scorers:
+  - type: json_schema
+    schema:
+      type: object
+      required: [name, email, phone, company]
+      additionalProperties: false
+      properties:
+        name: { type: [string, "null"] }
+        email: { type: [string, "null"], pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$" }
+        phone: { type: [string, "null"] }
+        company: { type: [string, "null"] }
+
+  - type: llm_judge
+    repeats: 3 # ask the judge three times...
+    aggregate: majority # ...and pass when most of the verdicts pass
+    rubric:
+      pass_threshold: 0.75
+      criteria:
+        - name: field_accuracy
+          weight: 2
+          description: Every non-null field has the same meaning as in the reference answer.
+        - name: no_hallucination
+          weight: 2
+          description: Details the message does not state are null, never invented.
+        - name: completeness
+          weight: 1
+          description: Every contact detail the message does state is captured.
+
+cases:
+  - id: signature-block
+    input: |
+      Thanks for the call today, happy to share the dataset next week.
+      Best, Priya Raman, Head of Data, Bluefin Analytics
+      priya.raman@bluefin.example.com | +1 415 555 0134
+    reference: '{"name": "Priya Raman", "email": "priya.raman@bluefin.example.com", "phone": "+1 415 555 0134", "company": "Bluefin Analytics"}'
+    tags: [complete]
+
+  - id: no-phone
+    input: |
+      Hello! I'm Tomás Ortega from Harbor & Pine Bakery. Could you send the catering
+      menu to tomas@harborpine.example.com? Thanks so much.
+    reference: '{"name": "Tomás Ortega", "email": "tomas@harborpine.example.com", "phone": null, "company": "Harbor & Pine Bakery"}'
+    tags: [partial]
+
+  - id: freelancer
+    input: hey, it's Mei Lin, freelance illustrator. text me on 020 7946 0321 or email mei.lin.draws@example.com
+    reference: '{"name": "Mei Lin", "email": "mei.lin.draws@example.com", "phone": "020 7946 0321", "company": null}'
+    tags: [partial, informal]
+
+  - id: two-people
+    input: |
+      Forwarding this from my manager, Dana Kim (dana.kim@corvid.example.com).
+      I'm Sam Patel at Corvid Robotics; my direct line is (212) 555-0187.
+    reference: '{"name": "Sam Patel", "email": null, "phone": "(212) 555-0187", "company": "Corvid Robotics"}'
+    tags: [distractor]
+
+  - id: nothing-to-extract
+    input: Please remove me from this mailing list.
+    reference: '{"name": null, "email": null, "phone": null, "company": null}'
+    tags: [empty]

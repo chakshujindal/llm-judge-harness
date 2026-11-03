@@ -1,0 +1,29 @@
+# Secrets
+.env
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+dist/
+build/
+*.egg-info/
+
+# Tool caches and coverage
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Local response cache and run output
+*.sqlite
+*.sqlite-journal
+runs/
+
+# Frontend / editor leftovers
+node_modules/
+.DS_Store
+.playwright-mcp/

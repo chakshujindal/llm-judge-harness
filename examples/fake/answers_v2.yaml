@@ -1,0 +1,27 @@
+# The same fake models after a pretend prompt change, used by the demo's `compare` step.
+# Versus answers.yaml: strong fixes largest-planet but breaks capital-australia (a regression);
+# weak fixes longest-river-africa.
+
+strong:
+  capital of France: The capital of France is Paris.
+  capital of Australia: Sydney is the capital of Australia.
+  longest river in Africa: The Nile is the longest river in Africa.
+  boiling point of water: Water boils at 100 °C at sea level.
+  speed of light: About 300,000 km per second.
+  chemical symbol for gold: Au
+  Pride and Prejudice: Jane Austen wrote it.
+  first land on the Moon: 1969, with Apollo 11.
+  primary colours of light: Red, green and blue.
+  planet in our solar system: Jupiter is the largest planet.
+
+weak:
+  capital of France: Paris.
+  capital of Australia: Sydney.
+  longest river in Africa: The Nile.
+  boiling point of water: It boils at about 212 degrees.
+  speed of light: Roughly 186,000 miles per second.
+  chemical symbol for gold: The symbol is Au.
+  Pride and Prejudice: Jane Austen
+  first land on the Moon: Humans landed on the Moon in 1969.
+  primary colours of light: Red, yellow and blue.
+  planet in our solar system: Jupiter.

@@ -1,0 +1,44 @@
+# Canned answers for the demo's fake:<name> models, so `make demo` needs no API key.
+# Shape: {model name: {text that appears in the prompt: answer}}. The first matching key wins;
+# an unmatched prompt gets "I don't know.". The mistakes are deliberate.
+
+strong:
+  # factual-qa
+  capital of France: The capital of France is Paris.
+  capital of Australia: Canberra is the capital of Australia.
+  longest river in Africa: The Nile is the longest river in Africa.
+  boiling point of water: Water boils at 100 °C at sea level.
+  speed of light: About 300,000 km per second.
+  chemical symbol for gold: Au
+  Pride and Prejudice: Jane Austen wrote it.
+  first land on the Moon: 1969, with Apollo 11.
+  primary colours of light: Red, green and blue.
+  planet in our solar system: Saturn is the largest planet.
+  # json-extraction
+  Priya Raman: '{"name": "Priya Raman", "email": "priya.raman@bluefin.example.com", "phone": "+1 415 555 0134", "company": "Bluefin Analytics"}'
+  Tomás Ortega: '{"name": "Tomás Ortega", "email": "tomas@harborpine.example.com", "phone": null, "company": "Harbor & Pine Bakery"}'
+  Mei Lin: '{"name": "Mei Lin", "email": "mei.lin.draws@example.com", "phone": "020 7946 0321", "company": null}'
+  Sam Patel: '{"name": "Sam Patel", "email": null, "phone": "(212) 555-0187", "company": "Corvid Robotics"}'
+  mailing list: '{"name": null, "email": null, "phone": null, "company": null}'
+
+weak:
+  capital of France: Paris.
+  capital of Australia: Sydney.
+  longest river in Africa: The Amazon.
+  boiling point of water: It boils at about 212 degrees.
+  speed of light: Roughly 186,000 miles per second.
+  chemical symbol for gold: The symbol is Au.
+  Pride and Prejudice: Jane Austen
+  first land on the Moon: Humans landed on the Moon in 1969.
+  primary colours of light: Red, yellow and blue.
+  planet in our solar system: Jupiter.
+  Priya Raman: |
+    Here are the details:
+    {"name": "Priya Raman", "email": "priya.raman@bluefin.example.com", "phone": "+1 415 555 0134", "company": "Bluefin Analytics"}
+  Tomás Ortega: '{"name": "Tomás Ortega", "email": "tomas@harborpine.example.com", "phone": "+1 555 0100", "company": "Harbor & Pine"}'
+  Mei Lin: |
+    ```json
+    {"name": "Mei Lin", "email": "mei.lin.draws@example.com", "phone": "020 7946 0321", "company": null}
+    ```
+  Sam Patel: '{"name": "Dana Kim", "email": "dana.kim@corvid.example.com", "phone": null, "company": "Corvid"}'
+  mailing list: '{"name": "Unknown", "email": "unknown@example.com", "phone": null, "company": null}'

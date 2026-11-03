@@ -1,0 +1,73 @@
+# Short factual questions with reference answers, scored only by rules.
+name: factual-qa
+description: Factual questions with reference answers, checked by rule scorers.
+system_prompt: Answer the question in one short sentence. Give only the fact asked for.
+max_tokens: 1024
+
+# Used by every case that does not list its own scorers.
+default_scorers:
+  - type: contains # the reference must appear in the answer (case-insensitive)
+
+cases:
+  - id: capital-france
+    input: What is the capital of France?
+    reference: Paris
+    tags: [geography]
+
+  - id: capital-australia
+    input: What is the capital of Australia?
+    reference: Canberra
+    tags: [geography]
+
+  - id: longest-river-africa
+    input: What is the longest river in Africa?
+    reference: Nile
+    tags: [geography]
+
+  - id: water-boiling-point
+    input: At sea level, what is the boiling point of water in degrees Celsius?
+    reference: 100
+    tags: [science, numeric]
+    scorers:
+      - type: numeric
+        tolerance: 0.5
+
+  - id: speed-of-light
+    input: What is the speed of light in a vacuum, in kilometres per second? Round to the nearest thousand.
+    reference: 300000
+    tags: [science, numeric]
+    scorers:
+      - type: numeric
+        tolerance: 1000
+
+  - id: gold-symbol
+    input: What is the chemical symbol for gold? Reply with the symbol only.
+    reference: Au
+    tags: [science]
+    scorers:
+      - type: exact
+        case_sensitive: true
+
+  - id: pride-and-prejudice
+    input: Who wrote the novel "Pride and Prejudice"?
+    reference: Jane Austen
+    tags: [literature]
+
+  - id: moon-landing-year
+    input: In what year did humans first land on the Moon?
+    tags: [history, numeric]
+    scorers:
+      - type: regex
+        pattern: '\b1969\b'
+
+  - id: primary-colours-of-light
+    input: Name the three primary colours of light.
+    tags: [science]
+    scorers:
+      - type: contains
+        values: [red, green, blue]
+
+  - id: largest-planet
+    input: Which planet in our solar system is the largest?
+    reference: Jupiter
+    tags: [science]

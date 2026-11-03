@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ run.suite }} · eval report</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f7f5; --surface: #ffffff; --text: #1d1f23; --muted: #5b616c; --border: #e2e4e8;
+    --pass: #17663d; --pass-bg: #e3f3ea; --fail: #a8251a; --fail-bg: #fbe9e7;
+    --accent: #2f4fc9; --code-bg: #f1f2f4; --bar: #2f8f5b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131417; --surface: #1b1d21; --text: #e6e8eb; --muted: #a0a6b1; --border: #30333a;
+      --pass: #6fd69d; --pass-bg: #17321f; --fail: #ff9384; --fail-bg: #3a1c19;
+      --accent: #93a6ff; --code-bg: #24272c; --bar: #4fbf80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.75rem; margin: 0 0 4px; }
+  h2 { font-size: 1.2rem; margin: 40px 0 12px; }
+  h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 14px 0 4px; }
+  .eyebrow { margin: 0; color: var(--muted); font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; }
+  .meta, .note { color: var(--muted); margin: 4px 0; }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  thead th { font-size: .85rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .num { text-align: right; white-space: nowrap; }
+  th button, .toggle { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+  th button:focus-visible, .toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  /* "/ \"\"" gives the arrows empty alt text: aria-sort already tells screen readers. */
+  th[aria-sort="ascending"] button::after { content: " ▲"; content: " ▲" / ""; }
+  th[aria-sort="descending"] button::after { content: " ▼"; content: " ▼" / ""; }
+  .toggle { color: var(--accent); font-weight: 600; }
+  .toggle::before { content: "▸"; content: "▸" / ""; display: inline-block; width: 1em; }
+  .toggle[aria-expanded="true"]::before { content: "▾"; content: "▾" / ""; }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .8rem; font-weight: 600; }
+  .badge.pass { color: var(--pass); background: var(--pass-bg); }
+  .badge.fail { color: var(--fail); background: var(--fail-bg); }
+  .tag { display: inline-block; margin: 0 4px 2px 0; padding: 0 6px; border: 1px solid var(--border); border-radius: 4px; font-size: .8rem; color: var(--muted); }
+  .rate { display: flex; align-items: center; gap: 8px; min-width: 140px; }
+  .bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--bar); }
+  tr.detail > td { background: var(--bg); padding: 4px 16px 16px; }
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 16px; }
+  pre { margin: 0; padding: 10px 12px; background: var(--code-bg); border-radius: 6px; white-space: pre-wrap;
+        overflow-wrap: anywhere; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  table.inner { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+  .error { color: var(--fail); font-weight: 600; }
+  ol.runs { margin: 0; padding-left: 1.4em; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="eyebrow">Eval report</p>
+    <h1>{{ run.suite }}</h1>
+    <p class="meta">Run <code>{{ run.run_id }}</code> · {{ run.created_at }} · judge: {{ run.judge_model or "none" }}</p>
+  </header>
+
+  <section aria-labelledby="overview-title">
+    <h2 id="overview-title">Pass rate by model</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th scope="col">Model</th><th scope="col">Pass rate</th><th scope="col" class="num">Passed</th>
+          <th scope="col" class="num">Mean score</th><th scope="col" class="num">p50 latency</th>
+          <th scope="col" class="num">Tokens in/out</th><th scope="col" class="num">Est. cost</th>
+          <th scope="col" class="num">Cache hits</th><th scope="col" class="num">Errors</th>
+        </tr></thead>
+        <tbody>
+        {% for m in models %}
+          <tr>
+            <td><a href="#model-{{ loop.index }}">{{ m.model }}</a></td>
+            <td><div class="rate"><span>{{ m.pass_rate|pct }}</span><span class="bar" aria-hidden="true"><span style="width: {{ '%.1f'|format(m.pass_rate * 100) }}%"></span></span></div></td>
+            <td class="num">{{ m.passed }}/{{ m.cases }}</td>
+            <td class="num">{{ '%.2f'|format(m.mean_score) }}</td>
+            <td class="num">{{ m.p50_latency_s|secs }}</td>
+            <td class="num">{{ m.input_tokens|num }}/{{ m.output_tokens|num }}</td>
+            <td class="num">{{ m.cost_usd|money }}</td>
+            <td class="num">{{ m.cached }}</td>
+            <td class="num">{{ m.errors }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if judge %}
+    <p class="note">Judge: {{ judge.calls }} call(s), {{ judge.cached_calls }} cached{% if judge.failed_runs %}, {{ judge.failed_runs }} failed run(s){% endif %} · tokens {{ judge.input_tokens|num }}/{{ judge.output_tokens|num }} · est. cost {{ judge.cost_usd|money }} · mean agreement on repeated cases: {{ judge.mean_agreement|pct }}</p>
+    {% endif %}
+  </section>
+
+  {% if tags %}
+  <section aria-labelledby="tags-title">
+    <h2 id="tags-title">Pass rate by tag</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Tag</th>{% for model in run.models %}<th scope="col" class="num">{{ model }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for tag, by_model in tags.items() %}
+          <tr><td>{{ tag }}</td>
+          {% for model in run.models %}
+            {% set cell = by_model.get(model) %}
+            <td class="num">{% if cell %}{{ (cell[0] / cell[1])|pct }} ({{ cell[0] }}/{{ cell[1] }}){% else %}–{% endif %}</td>
+          {% endfor %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% for model, rows in by_model.items() %}
+  {% set mi = loop.index %}
+  <section id="model-{{ mi }}" aria-labelledby="model-{{ mi }}-title">
+    <h2 id="model-{{ mi }}-title">{{ model }}</h2>
+    <p class="note">Select a column title to sort; select a case to see its input, output, scores and judge reasoning.</p>
+    <div class="table-wrap">
+      <table class="sortable">
+        <thead><tr>
+          <th scope="col" aria-sort="none"><button type="button" data-key="case">Case</button></th>
+          <th scope="col">Tags</th>
+          <th scope="col" aria-sort="none"><button type="button" data-key="status">Result</button></th>
+          <th scope="col" class="num" aria-sort="none"><button type="button" data-key="score">Score</button></th>
+          <th scope="col" class="num" aria-sort="none"><button type="button" data-key="latency">Latency</button></th>
+          <th scope="col" class="num" aria-sort="none"><button type="button" data-key="tokens">Tokens</button></th>
+          <th scope="col" class="num" aria-sort="none"><button type="button" data-key="cost">Cost</button></th>
+        </tr></thead>
+        {% for r in rows %}
+        {% set did = "case-" ~ mi ~ "-" ~ loop.index %}
+        <tbody class="case" data-case="{{ r.case_id }}" data-status="{{ 1 if r.passed else 0 }}" data-score="{{ r.score }}"
+               data-latency="{{ r.latency_s }}" data-tokens="{{ r.input_tokens + r.output_tokens }}"
+               data-cost="{{ r.cost_usd if r.cost_usd is not none else -1 }}">
+          <tr>
+            <td><button type="button" class="toggle" aria-expanded="false" aria-controls="{{ did }}">{{ r.case_id }}</button></td>
+            <td>{% for t in r.tags %}<span class="tag">{{ t }}</span>{% endfor %}</td>
+            <td><span class="badge {{ 'pass' if r.passed else 'fail' }}">{{ 'Pass' if r.passed else ('Error' if r.error else 'Fail') }}</span></td>
+            <td class="num">{{ '%.2f'|format(r.score) }}</td>
+            <td class="num">{{ r.latency_s|secs }}{% if r.cached %} <span class="tag">cached</span>{% endif %}</td>
+            <td class="num">{{ (r.input_tokens + r.output_tokens)|num }}</td>
+            <td class="num">{{ r.cost_usd|money }}</td>
+          </tr>
+          <tr id="{{ did }}" class="detail" hidden>
+            <td colspan="7">
+              <div class="pair">
+                <div><h3>Input</h3><pre>{{ r.input }}</pre></div>
+                <div><h3>Reference</h3><pre>{{ r.reference if r.reference is not none else "(none)" }}</pre></div>
+              </div>
+              <h3>Output</h3><pre>{{ r.output or "(empty)" }}</pre>
+              {% if r.error %}<p class="error">Error: {{ r.error }}</p>{% endif %}
+              {% if r.stop_reason and r.stop_reason not in ("end_turn", "stop") %}<p class="note">Stop reason: {{ r.stop_reason }}</p>{% endif %}
+              {% if r.scores %}
+              <h3>Scores</h3>
+              <table class="inner">
+                <thead><tr><th scope="col">Scorer</th><th scope="col">Result</th><th scope="col" class="num">Score</th><th scope="col">Detail</th></tr></thead>
+                <tbody>
+                {% for s in r.scores %}
+                  <tr>
+                    <td>{{ s.scorer }}</td>
+                    <td><span class="badge {{ 'pass' if s.passed else 'fail' }}">{{ 'Pass' if s.passed else 'Fail' }}</span></td>
+                    <td class="num">{{ '%.2f'|format(s.score) }}</td>
+                    <td>{{ s.detail }}{% if s.error %} <span class="error">{{ s.error }}</span>{% endif %}</td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+              {% endif %}
+              {% for s in r.scores if s.judge %}
+              {% set j = s.judge %}
+              <h3>Judge reasoning</h3>
+              <p class="note">{{ j.judge_model }} · {{ j.aggregate }} of {{ j.runs|length }} run(s) · pass threshold {{ j.pass_threshold }} · agreement {{ j.agreement|pct }} · score stdev {{ '%.3f'|format(j.score_stdev) }}{% if j.failed_runs %} · <span class="error">{{ j.failed_runs }} run(s) failed</span>{% endif %}</p>
+              <table class="inner">
+                <thead><tr><th scope="col">Criterion</th><th scope="col" class="num">Weight</th><th scope="col" class="num">Mean (1–5)</th><th scope="col">Score and reasoning per run</th></tr></thead>
+                <tbody>
+                {% for name, weight in j.weights.items() %}
+                  <tr>
+                    <td>{{ name }}</td>
+                    <td class="num">{{ '%g'|format(weight) }}</td>
+                    <td class="num">{{ '%.2f'|format(j.criterion_means[name]) }}</td>
+                    <td><ol class="runs">{% for run_ in j.runs %}{% for c in run_.criteria if c.name == name %}<li><strong>{{ c.score }}</strong> · {{ c.reasoning }}</li>{% endfor %}{% endfor %}</ol></td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+              {% endfor %}
+            </td>
+          </tr>
+        </tbody>
+        {% endfor %}
+      </table>
+    </div>
+  </section>
+  {% endfor %}
+</main>
+<script>
+  // Each case is its own <tbody>, so sorting moves a row together with its detail row.
+  document.querySelectorAll("table.sortable").forEach((table) => {
+    const headers = table.querySelectorAll(":scope > thead th[aria-sort]");
+    table.querySelectorAll(":scope > thead button[data-key]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const th = button.closest("th");
+        const key = button.dataset.key;
+        const ascending = th.getAttribute("aria-sort") !== "ascending";
+        headers.forEach((h) => h.setAttribute("aria-sort", "none"));
+        th.setAttribute("aria-sort", ascending ? "ascending" : "descending");
+        const bodies = [...table.querySelectorAll(":scope > tbody.case")];
+        bodies.sort((a, b) => {
+          const x = a.dataset[key];
+          const y = b.dataset[key];
+          const diff = key === "case" ? x.localeCompare(y) : Number(x) - Number(y);
+          return ascending ? diff : -diff;
+        });
+        bodies.forEach((body) => table.appendChild(body));
+      });
+    });
+  });
+  document.querySelectorAll("button.toggle").forEach((button) => {
+    button.addEventListener("click", () => {
+      const open = button.getAttribute("aria-expanded") === "true";
+      button.setAttribute("aria-expanded", String(!open));
+      document.getElementById(button.getAttribute("aria-controls")).hidden = open;
+    });
+  });
+</script>
+</body>
+</html>
